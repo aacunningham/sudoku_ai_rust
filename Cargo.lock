@@ -1,0 +1,4 @@
+[[package]]
+name = "sudoku_ai"
+version = "0.1.0"
+
