@@ -1,4 +1,4 @@
 pub struct Square {
-    value: u32,
+    pub value: usize,
 }
 

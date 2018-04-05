@@ -1,4 +1,3 @@
-
 use sudoku::square::Square;
 
 #[allow(dead_code)]
@@ -17,9 +16,9 @@ impl SquareSet {
     }
 
     #[allow(dead_code)]
-    pub fn get(&mut self, x: usize, y: usize) -> Option<&mut Square> {
+    pub fn get(&self, x: usize, y: usize) -> Option<&Square> {
         let location = x + y * self.dimension;
-        self.squares.get_mut(location)
+        self.squares.get(location)
     }
 }
 
