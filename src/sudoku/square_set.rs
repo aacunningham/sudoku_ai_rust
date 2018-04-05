@@ -17,8 +17,15 @@ impl SquareSet {
 
     #[allow(dead_code)]
     pub fn get(&self, x: usize, y: usize) -> Option<&Square> {
-        let location = x + y * self.dimension;
-        self.squares.get(location)
+        let index = x + y * self.dimension;
+        self.squares.get(index)
+    }
+
+    #[allow(dead_code)]
+    pub fn reset_domains(&mut self) {
+        for square in self.squares.iter_mut() {
+            square.reset(self.dimension);
+        }
     }
 }
 
