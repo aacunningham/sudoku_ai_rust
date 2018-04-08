@@ -12,12 +12,8 @@ pub struct Puzzle {
 }
 
 impl Puzzle {
-    #[allow(dead_code)]
-    pub fn read_square(&self, x: usize, y: usize) -> Option<usize> {
-        match self.squares.get(x, y) {
-            Some(&square::Square{value, ..}) => Some(value),
-            None => None,
-        }
-    }
+    pub fn is_solved(&self) -> bool {
+        self.squares.is_solved()
+	}
 }
 
