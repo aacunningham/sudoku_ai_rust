@@ -6,16 +6,62 @@ use std::io::prelude::*;
 use super::square::Square;
 
 
+/// Contains a sudoku puzzle
+///
+/// # Examples
+/// ```
+/// # extern crate sudoku_ai;
+/// # use sudoku_ai::Puzzle;
+/// # fn main() {
+/// let mut puzzle = Puzzle::read_from_string("1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1");
+///
+/// assert!(puzzle.is_valid());
+/// # }
+/// ```
 pub struct Puzzle {
     dimension: usize,
     squares: Vec<Square>,
 }
 
 impl Puzzle {
+    /// Read a sudoku puzzle from a file.
+    ///
+    /// The format of the file is expected to be series of integers separated
+    /// by whitespace, though any whitespace will do. So for a 4x4 puzzle,
+    /// you could have it all in one line:
+    /// ```text
+    /// // puzzle.txt
+    /// 1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1
+    /// ```
+    /// ... or for more readability, split it into rows:
+    /// ```text
+    /// // puzzle.txt
+    /// 1 2 3 4
+    /// 3 4 1 2
+    /// 2 1 4 3
+    /// 4 3 2 1
+    /// ```
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate sudoku_ai;
+    /// # use sudoku_ai::Puzzle;
+    /// # fn main() {
+    /// # use std::fs::File;
+    /// # use std::io::prelude::*;
+    /// # fn foo () -> std::io::Result<()> {
+    /// let mut file = File::open("puzzle.txt")?;
+    /// let mut puzzle = Puzzle::read_from_file(&mut file);
+    ///
+    /// assert!(puzzle.is_valid());
+    /// # Ok(())
+    /// # }
+    /// # }
+    /// ```
     pub fn read_from_file(source: &mut File) -> Puzzle {
         let mut contents = String::new();
         source.read_to_string(&mut contents).unwrap();
-        let squares = contents.split(" ")
+        let squares = contents.split_whitespace()
                               .filter_map(|x| x.parse::<usize>().ok())
                               .map(|x| Square::new(x))
                               .collect::<Vec<_>>();
@@ -27,6 +73,22 @@ impl Puzzle {
         }
     }
 
+    /// Read a sudoku puzzle from a string.
+    ///
+    /// The format of the string is expected to be series of integers separated
+    /// by whitespace, though any whitespace will do.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate sudoku_ai;
+    /// # use sudoku_ai::Puzzle;
+    /// # fn main() {
+    /// let puzzle_string = String::from("1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1");
+    /// let mut puzzle = Puzzle::read_from_string(&puzzle_string);
+    ///
+    /// assert!(puzzle.is_valid());
+    /// # }
+    /// ```
     pub fn read_from_string(source: &str) -> Puzzle {
         let squares = source.split(" ")
                             .filter_map(|x| x.parse::<usize>().ok())
@@ -42,14 +104,13 @@ impl Puzzle {
 
     pub fn is_solved(&self) -> bool {
         self.is_valid() && self.all_filled()
-            
     }
 
-	fn all_filled(&self) -> bool {
+    fn all_filled(&self) -> bool {
         self.squares.iter().all(|square| square.value != 0)
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         if !self.squares.iter().all(|square| square.is_valid()) {
             return false;
         }
@@ -133,7 +194,7 @@ impl Puzzle {
         let initial = group_initial_x + group_initial_y * self.dimension;
         let mut result = Vec::new();
         for counter in 0..group_dimension {
-            let initial_skip = initial + (counter * group_dimension * group_dimension);
+            let initial_skip = initial + (counter * group_dimension.pow(2));
             result.extend(self.squares.iter().skip(initial_skip).take(group_dimension));
         }
         result.iter().filter(|square| square.value != 0)
