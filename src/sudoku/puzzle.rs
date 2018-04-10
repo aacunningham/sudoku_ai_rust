@@ -67,10 +67,12 @@ impl Puzzle {
                               .collect::<Vec<_>>();
         let size = squares.len();
         let dimension = (size as f64).sqrt() as usize;
-        Puzzle {
+        let mut p = Puzzle {
             dimension,
             squares,
-        }
+        };
+        p.reset_domains();
+        p
     }
 
     /// Read a sudoku puzzle from a string.
@@ -96,12 +98,32 @@ impl Puzzle {
                             .collect::<Vec<_>>();
         let size = squares.len();
         let dimension = (size as f64).sqrt() as usize;
-        Puzzle {
+        let mut p = Puzzle {
             dimension,
             squares,
-        }
+        };
+        p.reset_domains();
+        p
     }
 
+    /// Returns a bool based on whether the puzzle is solved.
+    ///
+    /// This is determined by checking if all of the squares are filled and if
+    /// every square is valid (described below).
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate sudoku_ai;
+    /// # use sudoku_ai::Puzzle;
+    /// # fn main() {
+    /// let mut puzzle = Puzzle::read_from_string("1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1");
+    /// assert!(puzzle.is_solved());
+    ///
+    /// // We replace a filled square with a zero to make the puzzle unsolved
+    /// puzzle = Puzzle::read_from_string("1 2 3 4 0 4 1 2 2 1 4 3 4 3 2 1");
+    /// assert!(!puzzle.is_solved());
+    /// # }
+    /// ```
     pub fn is_solved(&self) -> bool {
         self.is_valid() && self.all_filled()
     }
@@ -110,8 +132,33 @@ impl Puzzle {
         self.squares.iter().all(|square| square.value != 0)
     }
 
+    /// Returns a bool based on whether the puzzle is valid.
+    ///
+    /// A puzzle can be valid without being solved yet. A valid puzzle requires
+    /// that all filled squares have values within the range of the puzzle, that
+    /// there are no duplicates within each row, column, and group, and that if
+    /// a square is empty, it has at least one possibly value that can be entered
+    /// without making the puzzle invalid.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate sudoku_ai;
+    /// # use sudoku_ai::Puzzle;
+    /// # fn main() {
+    /// let mut puzzle = Puzzle::read_from_string("1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1");
+    /// assert!(puzzle.is_valid());
+    ///
+    /// // Even an unsolved puzzle can be valid
+    /// puzzle = Puzzle::read_from_string("1 2 3 4 0 4 1 2 2 1 4 3 4 3 2 1");
+    /// assert!(puzzle.is_valid());
+    ///
+    /// // But not if we have a duplicate in the first row
+    /// puzzle = Puzzle::read_from_string("1 2 4 4 0 4 1 2 2 1 4 3 4 3 2 1");
+    /// assert!(!puzzle.is_valid());
+    /// # }
+    /// ```
     pub fn is_valid(&self) -> bool {
-        if !self.squares.iter().all(|square| square.is_valid()) {
+        if !self.squares.iter().all(|square| square.is_valid(self.dimension)) {
             return false;
         }
         for counter in 0..self.dimension {
@@ -209,7 +256,28 @@ impl Puzzle {
         self.squares.iter().position(|square| square.value == 0)
     }
 
-    pub fn solve(&mut self) -> bool {
+    /// Solves the puzzle and returns a Ok<()> if it was successful
+    /// and Err<&str> if there was an error.
+    ///
+    /// # Example
+    /// ```
+    /// # extern crate sudoku_ai;
+    /// # use sudoku_ai::Puzzle;
+    /// # fn main() {
+    /// let mut puzzle = Puzzle::read_from_string("1 2 3 4 3 4 1 2 2 1 4 3 4 3 2 1");
+    /// // Already solved puzzle will be solved quickly
+    /// assert_eq!(puzzle.solve(), Ok(()));
+    ///
+    /// puzzle = Puzzle::read_from_string("1 2 0 0 3 4 1 2 2 1 4 3 4 3 2 1");
+    /// // Almost solved puzzle will also be solved quickly
+    /// assert_eq!(puzzle.solve(), Ok(()));
+    ///
+    /// puzzle = Puzzle::read_from_string("1 2 3 3 0 4 1 2 2 1 4 3 4 3 2 1");
+    /// // A puzzle with an error in it will return an Err<&str>
+    /// assert_eq!(puzzle.solve(), Err("The sudoku puzzle is invalid"));
+    /// # }
+    /// ```
+    pub fn solve(&mut self) -> Result<(), &str> {
         self.reset_domains();
         let mut history: Vec<Snapshot> = Vec::new();
         loop {
@@ -221,7 +289,7 @@ impl Puzzle {
                         self.squares = squares;
                         self.squares[index].remove_from_domain(&wrong_value);
                     },
-                    None => break
+                    None => return Err("The sudoku puzzle is invalid"),
                 }
             }
             match self.find_next_n_domain(1) {
@@ -240,7 +308,7 @@ impl Puzzle {
                 }
             }
         }
-        true
+        Ok(())
     }
 }
 

@@ -12,6 +12,8 @@ fn main() {
         3 1 0 0 8 5 0 0 4 \
         8 0 7 0 9 0 6 0 1";
     let mut puzzle = sudoku_ai::Puzzle::read_from_string(string);
-    puzzle.solve();
+    if let Err(message) = puzzle.solve() {
+        println!("{}", message);
+    };
     println!("{}", puzzle);
 }

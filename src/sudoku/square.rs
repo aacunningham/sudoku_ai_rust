@@ -19,8 +19,8 @@ impl Square {
         }
     }
 
-    pub fn is_valid(&self) -> bool {
-        self.value != 0 || !self.domain.is_empty()
+    pub fn is_valid(&self, max: usize) -> bool {
+        self.value > 0 && self.value <= max || !self.domain.is_empty()
     }
 
     pub fn clear_domain(&mut self) {
